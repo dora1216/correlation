@@ -10,10 +10,15 @@ st.caption("SSDSE-C-2026（2023-2025年平均・都道府県庁所在市）")
 # 1. データの読み込みと整形
 @st.cache_data
 def load_data():
-    # CSV読み込み（2行目の市名をヘッダーとして利用）
-    df_raw = pd.read_csv("SSDSE-C-2026.csv", header=None)
-    cities = df_raw.iloc[0, 2:].values  # 札幌市, 青森市, ...
-    items = df_raw.iloc[1:, 1].values   # 世帯人員, 食料（合計）, 米, ...
+# 文字コード（cp932 / utf-8）の自動判定読み込み
+    try:
+        df_raw = pd.read_csv("SSDSE-C-2026.csv", header=None, encoding="cp932")
+    except UnicodeDecodeError:
+        df_raw = pd.read_csv("SSDSE-C-2026.csv", header=None, encoding="utf-8")
+
+    # 1行目から都市名（札幌市〜那覇市）、品目名を取得
+    cities = df_raw.iloc[0, 2:].values
+    items = df_raw.iloc[1:, 1].values
     data = df_raw.iloc[1:, 2:].astype(float).values
 
     # 都市を行、品目を列にしたテーブルを作成（全国は除く場合は cities[1:] などで調整可能）
