@@ -161,7 +161,7 @@ fig = px.scatter(
     text=df.index if show_labels else None,
     trendline="ols",
     trendline_color_override="red",
-    labels={x_item: f"{x_item} (円/人)", y_item: f"{y_item} (円/人)"},
+    labels={x_item: f"{x_item} (円/世帯)", y_item: f"{y_item} (円/世帯)"},
     title=f"【{x_item}】 と 【{y_item}】 の散布図（47都道府県庁所在市）"
 )
 if show_labels:
