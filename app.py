@@ -14,8 +14,8 @@ def load_data():
     except UnicodeDecodeError:
         df_raw = pd.read_csv("SSDSE-C-2026.csv", header=None, encoding="utf-8")
 
-    codes = df_raw.iloc[0, 3:].values       # LA03, LB011001 など
-    item_names = df_raw.iloc[1, 3:].values  # 項目名
+    codes = df_raw.iloc[0, 3:].values
+    item_names = df_raw.iloc[1, 3:].values
     prefs = df_raw.iloc[2:, 1].values
     cities = df_raw.iloc[2:, 2].values
     city_labels = [f"{p} ({c})" if p != c else c for p, c in zip(prefs, cities)]
@@ -25,7 +25,7 @@ def load_data():
     if "全国" in df_clean.index:
         df_clean = df_clean.drop(index="全国")
 
-    # 項目コードから大分類を判定する辞書を作成
+    # 大分類マッピング
     category_map = {}
     for code, name in zip(codes, item_names):
         c = str(code).strip()
@@ -67,52 +67,67 @@ df, cat_map = load_data()
 all_items = list(df.columns)
 categories = ["すべて"] + sorted(list(set(cat_map.values())))
 
-# --- プリセット（おすすめペア）機能 ---
+# --- セッションステート初期化 ---
+if "box_x" not in st.session_state:
+    st.session_state.box_x = "米"
+if "box_y" not in st.session_state:
+    st.session_state.box_y = "食パン"
+if "cat_x" not in st.session_state:
+    st.session_state.cat_x = "すべて"
+if "cat_y" not in st.session_state:
+    st.session_state.cat_y = "すべて"
+
+# プリセット反映用関数
+def set_preset(x_val, y_val):
+    st.session_state.cat_x = "すべて"
+    st.session_state.cat_y = "すべて"
+    st.session_state.box_x = x_val
+    st.session_state.box_y = y_val
+    st.rerun()
+
+# --- プリセット（おすすめペア）ボタン ---
 st.subheader("💡 おすすめの探究テーマ（ワンタップ選択）")
 col_p1, col_p2, col_p3, col_p4 = st.columns(4)
 
-if "x_sel" not in st.session_state:
-    st.session_state.x_sel = "米"
-if "y_sel" not in st.session_state:
-    st.session_state.y_sel = "食パン"
-
 with col_p1:
-    if st.button("🍚 米 vs 🍞 食パン"):
-        st.session_state.x_sel = "米"
-        st.session_state.y_sel = "食パン"
+    if st.button("🍚 米 vs 🍞 食パン", use_container_width=True):
+        set_preset("米", "食パン")
 with col_p2:
-    if st.button("🍜 中華麺 vs 🥟 ぎょうざ"):
-        st.session_state.x_sel = "中華麺"
-        st.session_state.y_sel = "ぎょうざ" if "ぎょうざ" in all_items else all_items[1]
+    if st.button("🍜 中華麺 vs 🥟 ぎょうざ", use_container_width=True):
+        set_preset("中華麺", "ぎょうざ")
 with col_p3:
-    if st.button("👥 世帯人員 vs 🛒 食料（合計）"):
-        st.session_state.x_sel = "世帯人員"
-        st.session_state.y_sel = "食料（合計）"
+    if st.button("👥 世帯人員 vs 🛒 食料（合計）", use_container_width=True):
+        set_preset("世帯人員", "食料（合計）")
 with col_p4:
-    if st.button("☕ 喫茶代 vs 🍺 飲酒代"):
-        st.session_state.x_sel = "喫茶代"
-        st.session_state.y_sel = "飲酒代"
+    if st.button("☕ 喫茶代 vs 🍺 飲酒代", use_container_width=True):
+        set_preset("喫茶代", "飲酒代")
 
 st.markdown("---")
 
-# --- 項目選択エリア（大分類フィルター付き） ---
+# --- 項目選択エリア ---
 col_x, col_y = st.columns(2)
 
 with col_x:
     st.write("### 🔵 X軸（横軸）の設定")
     cat_x = st.selectbox("X軸のカテゴリ絞り込み", categories, key="cat_x")
     items_x = [it for it in all_items if cat_x == "すべて" or cat_map.get(it) == cat_x]
+
+    # 現在の選択値が絞り込みリストにない場合は先頭を選択
+    if st.session_state.box_x not in items_x:
+        st.session_state.box_x = items_x[0]
     
-    # 選択項目のインデックス調整
-    idx_x = items_x.index(st.session_state.x_sel) if st.session_state.x_sel in items_x else 0
+    idx_x = items_x.index(st.session_state.box_x)
     x_item = st.selectbox("X軸の項目を選択", items_x, index=idx_x, key="box_x")
 
 with col_y:
     st.write("### 🔴 Y軸（縦軸）の設定")
     cat_y = st.selectbox("Y軸のカテゴリ絞り込み", categories, key="cat_y")
     items_y = [it for it in all_items if cat_y == "すべて" or cat_map.get(it) == cat_y]
+
+    if st.session_state.box_y not in items_y:
+        st.session_state.box_y = items_y[0]
     
-    idx_y = items_y.index(st.session_state.y_sel) if st.session_state.y_sel in items_y else (1 if len(items_y) > 1 else 0)
+    idx_y = items_y.index(st.session_state.box_y)
     y_item = st.selectbox("Y軸の項目を選択", items_y, index=idx_y, key="box_y")
 
 # --- 相関係数の計算と判定 ---
