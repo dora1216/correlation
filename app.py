@@ -96,8 +96,8 @@ with col_p2:
     if st.button("🍜 中華麺 vs 🥟 ぎょうざ", use_container_width=True):
         set_preset("中華麺", "ぎょうざ")
 with col_p3:
-    if st.button("👥 世帯人員 vs 🛒 食料（合計）", use_container_width=True):
-        set_preset("世帯人員", "食料（合計）")
+    if st.button("🍞 食パン vs 🧈マーガリン", use_container_width=True):
+        set_preset("食パン", "マーガリン")
 with col_p4:
     if st.button("☕ 喫茶代 vs 🍺 飲酒代", use_container_width=True):
         set_preset("喫茶代", "飲酒代")
